@@ -11,6 +11,7 @@ library(janitor)
 library(extrafont)
 library(reschola)
 library(RColorBrewer)
+library(ragg) #in-bildt písma
 
 
 # barvy -------------------------------------------------------------------

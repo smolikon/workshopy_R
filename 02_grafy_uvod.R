@@ -163,7 +163,14 @@ d %>%
 
 
 # Úkol
-# Udělejte histogram pomocí ggplotu k dsitrbuci věku 
+# Udělejte histogram pomocí ggplotu k dsitrbuci věku
+d %>% 
+  drop_na(vek) %>% 
+  ggplot(aes(x = vek, fill = pohlavi)) +
+  geom_histogram(binwidth = 1, position = "dodge", alpha = 0.9) + 
+  facet_wrap(~ pohlavi) +
+  scale_fill_manual(values = c("darkgreen", "darkmagenta"))
+ggsave("grafy/output.png", plot = last_plot(), dpi = 300)
 # Poté zkuste požít facety - vytvořit dva grafy v 1 podle pohlaví 
 # Použijte jiné barvy než máme ve skriptu
 # facetový graf si uložte 
@@ -327,6 +334,12 @@ ggplot(data = d, aes(x = pohlavi, y = obvykla_delka_spanku, color = pohlavi)) +
 # Uděljte boxplot pro věkové rozložení, vyzkoušejte si změnit titulek, velikost titulku, změnu theme
 # zkuste udlěat 3 boxploty v 1 grafu vedle sebe, podle vzdělání 1 pro lidi se ZŠ, SŠ a VŠ vzděláním
 
+ggplot(data = d, aes(x = vzdelani_3kat, y = vek, color = as.factor(vzdelani_3kat))) +
+  geom_point(alpha = 0.7, position = position_jitter(width = 0.2)) +
+  geom_boxplot(alpha = 0.5, position = position_dodge(width = 0.75), outlier.shape = NA) +
+  labs(x = "Vzdělání", y = "Věk", title = "Délka spánku podle věku a pohlaví",
+       color = "Pohlaví") + # color upravuje název legendy 
+  theme_classic()
 
 # sloupcový horizontální pro baterii otázek -------------------------------
 # příklad grafu, který jsem použila, se smyšlenými hodnotami 
