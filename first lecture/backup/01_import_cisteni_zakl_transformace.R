@@ -11,23 +11,22 @@ library(skimr) # souhrnné statistiky
 library(stats)
 library(tidyverse)
 library(datasets)
-library(stringr)
 
 # při načtení projektů se nám ve výchozím nastavení soubory načítají a ukládají do složky s projektem, můžeme ověřit pomocí 
 
 getwd()
-
 
 # import dat  -------------------------------------------------------------
 
 # načítám dataset ve formát csv
 
 d <- read.csv2("data/input/cvicny_dataset.csv", header = TRUE, sep = ";", na.strings = c("", "NA"), encoding = "UTF-8")
+# "" definuje prázdné buňky jako NA
 # d <- read.csv2 ("C:/Users/katerina.safarova/Documents/GitHub/workshopy_R/data/input/cvicny_dataset.csv")
 # další alternativy read.csv(), read.table()
 
 
-# načítám dataset ve formtá xlsx - funkce z balíčku openxlsx
+# načítám dataset ve formtá xlsx - funkce z balíčku openxls
 d2 <- read.xlsx("data/input/cvicny_dataset.xlsx", na.strings = c("", "NA")) # pokud máme více listů načítá se automaticky 1., pokud chceme jiný potřeba definovat 
 d2 <- read.xlsx("data/input/cvicny_dataset.xlsx", sheet = "vsichni", na.strings = c("", "NA"))
 
@@ -84,16 +83,13 @@ rada <- 1:3 # x:y vytvoří řadu od x do y; proměnná obsahuje 3 prvky
 
 sada <- c(1, 4) # c() vytvoří proměnnou s více prvky
 
-soucet <- x + y 
+x + y 
 x - y
 x / y
 x * y
 sqrt(x+y)
 
-colnames(d)
-
 class(d$ORP)
-
 is.character(d$ORP)
 is.numeric(d$id)
 
@@ -129,6 +125,7 @@ d <- d %>%
 
 table(d$pohlavi)
 
+
 # chybějící hodnoty
 # přeskočí všechny řádky, kde je nějaké NA, stejně funguje funkce complete.cases()
 d1 <- d %>% 
@@ -136,7 +133,7 @@ d1 <- d %>%
 
 d2 <- d %>% filter(complete.cases(d))
 
-# přeskočí řádky s NA v dané proměnné 
+# přeskočí řádky s NA v dané proměnné
 d3 <- d %>% 
   drop_na(pohlavi)
 
@@ -150,20 +147,19 @@ d5 <- d %>%
 # přeměna všech NA v dataframu na vybranou hodnotu - používat opatrně 
 # d[is.na(d)] <- 0
 
-d6 <- d %>% 
-  filter(is.na(pohlavi))
 
 # ÚKOLY 
 # 1. zjisti, kolik chybějících hodnot je v proměnné pohlavi v tomto datasetu
 # 2. Načti si do R  cvičně další csv a xlsx soubor
 
+d6 <- d %>% 
+  filter(is.na(pohlavi))
 
+count(d, pohlavi)
 
 # počty chybějících hodnot v proměnných 
 # ve sloupcích
 na_counts <- colSums(is.na(d))
-
-d7 <- count(d, is.na(pohlavi))
 
 # Vytvoření dataframe s názvy proměnných a počty NA hodnot
 na_counts_df <- data.frame(
@@ -188,23 +184,24 @@ duplikaty <- d %>%
 
 duplikaty2 <- d %>%
   group_by(id) %>%
-  filter(n() > 1) %>% 
-  distinct(id)
+  filter(n() > 1)
 
 
 # Odstranění úplných duplikátů 
-d <- distinct(d)
-n_distinct(d$orp)
+d <- distinct(d, .keep_all = TRUE)
 
 # Odstranění opakujících se hodnot podle proměnné orp
 d_jedinecne_orp <- distinct(d, orp, .keep_all = TRUE)
 
-rm(d1, d2, d3, d4, d5, na_counts_df, resp_s_na, duplikaty, duplikaty2, d_jedinecne_orp)
-rm(d6, d7)
+rm(d1, d2, d3, d4, d5, d6, na_counts_df, resp_s_na, duplikaty, duplikaty2, d_jedinecne_orp)
 
 
 # ÚKOLY 
-# 1. Zjisti, kolik  orp se v datasetu opakuje
+# 1. Zjisti, která orp se v datasetu opakují 
+duplikaty <- d %>% 
+  get_dupes(orp) %>% 
+  distinct(orp)
+
 
 # úprava stávajících proměnných a tvorba nových s mutaate -----------------------------------------------------------
 
@@ -216,6 +213,7 @@ d <- d %>%
 
 class(d$pohlavi)
 levels(d$pohlavi)
+
 
 d <- d %>%
   mutate(pohlavi = factor(pohlavi, levels = c(1, 2), labels = c("ženy", "muži")))
@@ -247,12 +245,12 @@ d_serazeny <- d %>%
 
 rm(d_serazeny)
 
-d$datum_narozeni
 
 # nová proměnná rok_narození pro výpočet věku, funkce z balíčku lubridate
 d$rok_narozeni <- year(dmy(d$datum_narozeni))
 d$mesic_narozeni <- month(dmy(d$datum_narozeni))
 d$den_narozeni <- day(dmy(d$datum_narozeni))
+
 
 d <- d %>% 
   mutate(vek = 2024 - rok_narozeni)
@@ -268,26 +266,19 @@ d <- d %>%
 
 
 # přejmenování a rozdělování a spojování buněk ----------------------------
-colnames(d)
 
 d <- d %>% 
   rename(jmenoprijmeni = jmeno)
 
-colnames(d)
-d$jmeno
-
 # rozdělení jména a příjmení do dvou buněk 
 d <- separate(d, jmenoprijmeni, into = c("jmeno", "prijmeni"), sep = " ",  remove = FALSE)
 
-colnames(d)
 
 # spojení 
-d <- unite(d, jmeno_prijmeni, jmeno, prijmeni, sep = "-", remove = FALSE)
-
-d$jmeno_prijmeni
+d <- unite(d, jmeno_prijmeni, jmeno, prijmeni, sep = " ", remove = FALSE)
 
 
-# přejmenování a nová proměnná na základě hodnot jiné proměnné
+# přejmenování a nová proměnná na zákaldě hodnot jiné proměnné
 
 d <- d %>% 
   rename(vzdelani_3kat = vzdelani_f) %>% 
@@ -306,7 +297,7 @@ d$obvykla_delka_spanku <- as.numeric(gsub(",", ".", d$obvykla_delka_spanku))
 # 2. udělej dichotomickou proměnnou vzdelani_ss s hodnotami 0 a 1 (1 pokud má SŠ vzdělání)
 
 
-# TODO doprobrat na 2. setkání 
+
 # funkce filter a select --------------------------------------------------
 
 # filter pro výběr řádků s danými parametry
@@ -329,39 +320,31 @@ vybrana_id <- d %>%
   filter(id %in% c(5:8))
 
 # mimo těchto více čísel
-vybrana_id1 <- d %>% 
+vybrana_id2 <- d %>% 
   filter(!id %in%c(5:8))
 
 
-# kombiance podmínek: A
-vybrana_id2 <- d %>% 
+# kombiance parametrů
+vybrana_id3 <- d %>% 
   filter(id !=10 & vzdelani_3kat %in% c("ZŠ", "SŠ"))
 
-# kombinace podmínek: NEBO
-vybrana_id3 <- d %>% 
-  filter(str_starts(jmeno, "M") | id > 45)
-
-
-# kombiance podmínek
+# kombiance parametrů
 vybrana_id4 <- d %>%
   filter(vek %in% c(30:40) & pohlavi == "ženy")
 
 # vybrana_id5 <- d %>%
-   filter(vek <= 40 & vek >= 30 & pohlavi == "ženy")
+#   filter(vek <= 40 & vek >= 30 & pohlavi == "ženy")
 
-# select pro výběr konkrétních proměnných
+# select pro výběr proměnných
 d_vyber <- d %>% 
   select(id, obvykla_delka_spanku)
 
 d_vyber2 <- d %>%
   select(where(is.character)) 
 
-# proměnné začínající na, opakem by bylo končící na "ends_with()", použít lze také contains() např.
+# proměnné začínající na, opakem by bylo končící na "ends_with()"
 d_vyber3 <- d %>%
   select(starts_with("p")) 
-
-d_vyber4 <- d %>%
-  select(contains("_")) 
 
 colnames(d)
 
@@ -380,10 +363,8 @@ rm(d_vyber, d_vyber2, d_vyber3, zeny, ne_muzi, vybrane_id, vybrana_id, vybrana_i
 # 2. vyfiltruj respondenta s id 12 
 # 3 vyber z datasetu jen proměnné které jsou číselné (is.numeric)
 
-d_o <- d %>% select(starts_with("o"))
-d_12 <- d[d$id == 12,]
-d_12a <- d %>% filter(id == 12)
-d_num <- d %>% select(where(is.numeric))
+
+
 
 # souhrnné a číselné statistiky -------------------------------------------
 
@@ -398,36 +379,26 @@ sum(d$obvykla_delka_spanku, na.rm = TRUE)
 
 spanek <- d %>%
   group_by(vzdelani_3kat) %>%
-  summarize(mean_spanek = round(mean(obvykla_delka_spanku, na.rm = TRUE), digits = 2)) %>% 
-  ungroup()
+  summarize(mean_spanek = round(mean(obvykla_delka_spanku, na.rm = TRUE), digits = 2))
 
 # ÚKOLY 
-# 1. jaký je nejstarší a nejmladší účastník? Kolik je jim let?
-summary(d)
-min(d$vek, na.rm = TRUE)
-max(d$vek, na.rm = TRUE)
-
-# 2. jaký je medián hodin spánku pro ženy?
-f <- d %>% filter(pohlavi=="ženy")
-median(f$vek, na.rm = TRUE)
+# 1. jaký je nejstarší a nejmladší účastník? Kolik je jim let? 
+# 2. jaký je medián hodin spánku pro ženy? 
 
 # unnest ------------------------------------------------------------------
 #
 # jak rozdělit více orp v proměnné do řádků, aby v každém řádku byla v proměnné 1 hodnota
-# pomocí funkce unnest()
+
 d_long_orp <- d %>%   
   mutate(orp = strsplit(as.character(orp), ", ")) %>%
   unnest(orp)  # Rozbalit dataframe podle orp
 
 
-# pocty respondentů pro jednotlivá orp
 summary_df_orp <- d_long_orp %>%
-  select(orp, id)  %>%  # vybereme sloupce, které nás zajímají 
-  distinct() %>%        # zachováme jen unikátní řádky (v rámci všech proměnných, v našem případě jen id a orp)
-  group_by(orp) %>%     # seskupímě podle orp 
-  summarise(pocet_respondentu = n(), .groups = 'drop') %>%  # vypočteme pro každí orp počet respondentů 
-  ungroup () # zruším seskupení
-
+  select(orp, id)  %>% 
+  distinct() %>%  
+  group_by(orp) %>%
+  summarise(pocet_respondentu = n(), .groups = 'drop')
 
 # seřazení datasetu podle hodnot proměnné ------------------------------------------------------
 
@@ -439,19 +410,15 @@ d <- d %>%
 # arrange mělo problém s českou diakritikou ale funkce sort() funguje 
 d$prijmeni <- sort(d$prijmeni, decreasing = FALSE)
 
-# vybere 3 řádky s největší hodnotou věku 
 slice_max(d, order_by = vek, n = 3) %>% 
   select(id, vek)
 
-# vybere 5 řádků s největší hodnotou věku 
 slice_min(d, order_by = obvykla_delka_spanku, n = 5) %>% 
   select(id, vzdelani_3kat, obvykla_delka_spanku)
 
 
 # ÚKOLY 
 # 1. Seřaď respondenty podle hodin spánku od nejméně po nejvíce
-d <- d %>% arrange(desc(obvykla_delka_spanku))
-
 # 2. Seřaď datset abecedně podle ORP od konce abecedy
 
 
@@ -460,8 +427,6 @@ d <- d %>% arrange(desc(obvykla_delka_spanku))
 d <- d %>%
   relocate(vek, .after = datum_narozeni) %>%
   relocate(orp, .before = last_col())
-
-d1 <- relocate(d, where(is.numeric), .after = last_col())
 
 
 # ÚKOLY 
@@ -486,9 +451,7 @@ countries_long <- countries %>%
                names_to = "variable",
                values_to = "max_value") %>%
   group_by(variable) %>% 
-  slice_max(max_value) %>% 
-  mutate(max_value = round(max_value, 1))
-
+  slice_max(max_value)
 
 # převod na široký formát
 # Poněkud umělým, ale názorným příkladem může být, pokud by naším cílem bylo vytvořit dataframe 
@@ -501,37 +464,14 @@ countries_wide <- countries %>%
   slice_min(poverty_risk) %>% 
   pivot_wider(names_from = maj_belief, values_from = poverty_risk)
 
-table(countries$country)
-
-# použití case_when()
-# This function allows you to vectorise multiple if_else() statements. 
-# Each case is evaluated sequentially and the first match for each element determines the corresponding value in the output vector. 
-# If no cases match, the .default is used as a final "else" statment.
-
-countries <- countries %>% 
-  mutate(zeme_skupina = case_when(country %in% c("Albania", "Serbia", "North Macedonia", "Montenegro", "Bulgaria", "Romania", "Bosnia and Herzegovina") ~ "Balkán",
-                                  country %in% c("Cyprus", "Greece", "Turecko", "Italy", "Spain", "Portugal", "Turecko", "Croatia", "Malta") ~ "jižní Evropa",
-                                  country %in% c("Czechia", "Hungary", "Slovakia", "Germany", "Poland", "Austria") ~ "střední Evropa",
-                                  country %in% c("Sweden", "Iceland", "Norway", "Latvia", "Finland", "Lithuania") ~ "severní Evropa",
-                                  country %in% c("United Kingdom", "Luxembourg", "France", "Ireland", "Belgium", "Lithuania", "Denmark", 
-                                                 "Liechtenstein", "Switzerland") ~ "západní Evropa",
-                                  TRUE ~ "ostatní"))
-         
-check <- countries %>% 
-  select(country, zeme_skupina) %>% 
-  filter(zeme_skupina == "ostatní")
-
 
 
 # ukládání dat ------------------------------------------------------------
-getwd()
 
-# ukládání v Rkovém formátu 
-saveRDS(d, "data/processed/cvicny_dataset_clean.rds")
-#saveRDS(countries, "data/intermediate/countries.rds")
+saveRDS(d, "data/processed/dataset_clean.rds")
 
-# ukládání jako excelového xlsx souboru 
-write.xlsx(d, "data/processed/cvicny_dataset_clean.xlsx")
-#write.xlsx(countries, "data/intermediate/countries.xlsx")
+write.xlsx(d, "data/processed/dataset_clean.xlsx")
+
+
 
 
